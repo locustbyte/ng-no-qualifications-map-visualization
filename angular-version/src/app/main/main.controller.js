@@ -1,6 +1,5 @@
 (function() {
   'use strict';
-
   angular
     .module('angularVersion')
     .controller('MainController', MainController)
@@ -10,32 +9,44 @@
             return input.split(splitChar)[splitIndex];
         }
     })
-
   /** @ngInject */
   function MainController($timeout, webDevTec, toastr, $scope) {
     var vm = $scope;
-
+    vm.countyStat = userData;
+    vm.outletList = userData.data
+    console.log(vm.outletList)
+    vm.loadStats = function(county){
+      console.log(county)
+      vm.regionName = "Region: " + county;
+      vm.storeName = "Store: ";
+      angular.forEach(vm.countyStat, function(value, key) {
+        // console.log(vm.countyStat)
+        // console.log(value)
+        // if (value === county) {
+        //     // $scope.results.push({serial: key, owner: value[0].Owner});
+        //     console.log('ok')
+        // }
+      });
+    }
     vm.hitMap = function(d, i) {
+      vm.loadStats(i);
+
       $("[d='"+d+"']").d3Click();
     }
-
     angular.element(document).ready(function() {
       var body = d3.select("body");
       ts.choropleth.draw(body);
-
       jQuery.fn.d3Click = function() {
         this.each(function(i, e) {
           var evt = new MouseEvent("click");
           e.dispatchEvent(evt);
         });
       };
-
       var mapRegions = [];
       var mapRegionss = [];
       var dropItems = d3.selectAll('path')[0];
       //clear first as it's not an actual county
       dropItems.shift();
-
       var i = 0;
       for (i = 0; i < dropItems.length; ++i) {
           var front = dropItems[i].outerHTML.split('<path d="')[1]
@@ -45,7 +56,6 @@
       }
       //set ng scope var for ng-repeat
       vm.mapRegionss = mapRegions;
-
     });
   }
 })();

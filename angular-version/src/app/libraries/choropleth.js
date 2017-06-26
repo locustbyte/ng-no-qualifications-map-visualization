@@ -1,8 +1,6 @@
 ﻿var ts = ts || {};
-
 ts.choropleth = (function () {
     "use strict";
-
     var body,
         svg,
         mapGrp,
@@ -10,27 +8,18 @@ ts.choropleth = (function () {
         height = 1160,
         centered = true,
         tooltip,
-
     projection = d3.geo.albers()
         .center([0, 55.4])
         .rotate([4.4, 0])
         .parallels([50, 60])
         .scale(6000)
         .translate([width / 2, height / 2]),
-
     path = d3.geo.path().projection(projection),
-
-    // colourScale = d3.scale.quantize()
-    //     .domain([unqualified.summary.min_percent, unqualified.summary.max_percent])
-    //     .range(d3.range(9).map(function (i) { return "q" + i + "-9"; })),
-
     click = function(d) {
-      // console.log(d)
         var x,
             y,
             scaleFactor,
             lineScaleFactor;
-
         if (d && centered !== d) {
             var centroid = path.centroid(d);
             x = centroid[0];
@@ -45,52 +34,23 @@ ts.choropleth = (function () {
             lineScaleFactor = 1;
             centered = null;
         }
-
         d3.selectAll("path")
-            .classed("active", centered && function (d) {
+            .classed("active animated flash", centered && function (d) {
                 return d === centered;
             });
-
     },
-
-    mouseover = function (d, i) {
-      // console.log(d)
-        // var vals = unqualified.data[d.id];
-        // // console.log(vals.name)
-        // tooltip.style("opacity", .93);
-        // d3.select("#toolName").text(vals.name);
-        // d3.select("#toolVal").text(vals.percent_unqual + "%");
-        // d3.select("#someA").text("d", d);
-
-    },
-
-    mousemove = function (d, i) {
-        var tooltipDiv = document.getElementById("infoBox");
-        tooltip.style("left", (d3.event.pageX - 75) + "px")
-            .style("top", (d3.event.pageY - tooltipDiv.clientHeight - 15) + "px");
-    },
-
-    mouseout = function () {
-        tooltip.style("opacity", 1e-6);
-    },
-
     draw = function (b) {
         body = b;
-
         tooltip = d3.select("#tooltip");
-
         svg = body.append("svg")
              .attr("viewBox", "0 0 " + width + " " + height)
              .attr("width", width)
              .attr("height", height);
-
         mapGrp = svg.append("g").attr("id", "mapGrp");
-
         svg.append("filter")
             .attr("id", "dropshadow")
             .append("feGaussianBlur")
             .attr("stdDeviation", 5);
-
         // External boundary.
         mapGrp.append("path")
            .datum(topojson.mesh(boundaries, boundaries.objects.GBR_adm2, function (a, b) { return a === b; }))
@@ -98,28 +58,18 @@ ts.choropleth = (function () {
            .attr("filter", "url(#dropshadow)")
            .attr("stroke-width", "1px")
            .attr("d", path);
-
-
-        // Constituencies.
+        // Counties.
         mapGrp.append("g")
-            .attr("class", "YlGn constituency")
+            .attr("class", "YlGn county")
             .attr("id", "geometries")
             .selectAll("path")
             .data(topojson.object(boundaries, boundaries.objects.GBR_adm2).geometries)
             .enter()
             .append("path")
-            // .attr("class", function (d) {
-            //     return colourScale(unqualified.data[d.id].percent_unqual);
-            // })
             .attr("d", path)
             .on("click", click)
-            .on("mouseover", mouseover)
-            .on("mousemove", mousemove)
-            .on("mouseout", mouseout)
             $('.dropdown-menu').attr('click',path);
-
     };
-
     return {
         draw: draw
     };
