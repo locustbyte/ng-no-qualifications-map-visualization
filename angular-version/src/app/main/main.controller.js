@@ -13,25 +13,73 @@
   function MainController($timeout, webDevTec, toastr, $scope) {
     var vm = $scope;
     vm.countyStat = userData;
-    vm.outletList = userData.data
-    console.log(vm.outletList)
+    vm.outletList = storeData.stores
+
+
     vm.loadStats = function(county){
       console.log(county)
-      vm.regionName = "Region: " + county;
-      vm.storeName = "Store: ";
-      angular.forEach(vm.countyStat, function(value, key) {
-        // console.log(vm.countyStat)
-        // console.log(value)
-        // if (value === county) {
-        //     // $scope.results.push({serial: key, owner: value[0].Owner});
-        //     console.log('ok')
-        // }
-      });
+
+      //Width and height
+			var w = 200;
+			var h = 100;
+			var barPadding = 1;
+
+			var dataset = [ 5, 10 ];
+
+			//Create SVG element
+			var svg = d3.select("#chart")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+
+			svg.selectAll("rect")
+			   .data(dataset)
+			   .enter()
+			   .append("rect")
+			   .attr("x", function(d, i) {
+			   		return i * (w / dataset.length);
+			   })
+			   .attr("y", function(d) {
+			   		return h - (d * 4);
+			   })
+			   .attr("width", w / dataset.length - barPadding)
+			   .attr("height", function(d) {
+			   		return d * 4;
+			   })
+			   .attr("fill", function(d) {
+					return "rgb(0, 0, " + (d * 10) + ")";
+			   });
+
+			svg.selectAll("text")
+			   .data(dataset)
+			   .enter()
+			   .append("text")
+			   .text(function(d) {
+			   		return d;
+			   })
+			   .attr("x", function(d, i) {
+			   		return i * (w / dataset.length) + 5;
+			   })
+			   .attr("y", function(d) {
+			   		return h - (d * 4) + 15;
+			   })
+			   .attr("font-family", "sans-serif")
+			   .attr("font-size", "11px")
+			   .attr("fill", "white");
+
+
+
+
+
     }
     vm.hitMap = function(d, i) {
-      vm.loadStats(i);
-
+      vm.regionName = "Region: " + i;
+      //Send click event on d3map for the county - to highlight
       $("[d='"+d+"']").d3Click();
+    }
+    //Respond to store filter - should load bar chart for 'store' showing Nurses and Phamacists data
+    vm.changeStore = function(storeName){
+      vm.loadStats(storeName)
     }
     angular.element(document).ready(function() {
       var body = d3.select("body");
@@ -51,7 +99,9 @@
       for (i = 0; i < dropItems.length; ++i) {
           var front = dropItems[i].outerHTML.split('<path d="')[1]
           var complete = front.split('"></path>')[0]
+
           mapRegions.push({"url": complete, "label": boundaries.objects.GBR_adm2.geometries[i].properties.NAME_2});
+
           i++;
       }
       //set ng scope var for ng-repeat

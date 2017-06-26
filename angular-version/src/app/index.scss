@@ -41,11 +41,19 @@ svg{
   position: absolute;
   top: 15px;
   left: 20px;
+  .dropdown-menu{
+    max-height: 300px;
+    overflow: auto;
+  }
 }
 #chartInfo{
   top: 30%;
   position: absolute;
   left: 20px;
+  #chart{
+    width: 200px;
+    height: 100px;
+  }
 }
 /**
  *  Do not remove the comments below. It's the markers used by gulp-inject to inject
