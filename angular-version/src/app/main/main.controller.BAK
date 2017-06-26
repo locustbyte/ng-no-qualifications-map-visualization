@@ -1,0 +1,87 @@
+(function() {
+  'use strict';
+
+  angular
+    .module('angularVersion')
+    .controller('MainController', MainController)
+    .filter('split', function() {
+        return function(input, splitChar, splitIndex) {
+            // do some bounds checking here to ensure it has that index
+            return input.split(splitChar)[splitIndex];
+        }
+    })
+
+  /** @ngInject */
+  function MainController($timeout, webDevTec, toastr, $scope) {
+    var vm = $scope;
+    vm.mapRegions = [];
+    vm.mapRegionss = [];
+    vm.dropItemLabels = boundaries.objects.GBR_adm2.geometries
+
+    vm.items = boundaries.objects.GBR_adm2.geometries
+
+    vm.hitMap = function(d, i) {
+          console.log(d)
+          $("[d='"+d+"']").d3Click();
+    }
+
+    vm.status = {
+      isopen: false
+    };
+
+    vm.toggled = function(open) {
+      $log.log('Dropdown is now: ', open);
+    };
+
+    vm.toggleDropdown = function($event) {
+      $event.preventDefault();
+      $event.stopPropagation();
+      $scope.status.isopen = !$scope.status.isopen;
+    };
+
+    vm.appendToEl = angular.element(document.querySelector('#dropdown-long-content'));
+
+    vm.mySplit = function(string, nb) {
+        var array = string.split('<path ');
+        return array[nb];
+    }
+
+
+    angular.element(document).ready(function() {
+      var body = d3.select("body");
+      ts.choropleth.draw(body);
+
+      jQuery.fn.d3Click = function() {
+        this.each(function(i, e) {
+          var evt = new MouseEvent("click");
+          e.dispatchEvent(evt);
+        });
+      };
+
+
+      angular.forEach(vm.dropItemLabels, function(itemLabel){
+        console.log(itemLabel.properties.NAME_2)
+        // var front = item.outerHTML.split('<path d="')[1]
+        // vm.mapRegions.push({"url": front});
+      });
+
+
+      vm.dropItems = d3.selectAll('path')[0];
+      console.log(vm.dropItems)
+
+      angular.forEach(vm.dropItems, function(item){
+        console.log(item)
+        var front = item.outerHTML.split('<path d="')[1]
+        vm.mapRegions.push({"url": front});
+      });
+      vm.mapRegions.shift()
+
+      angular.forEach(vm.mapRegions, function(itemB){
+        var complete = itemB.url.split('"></path>')[0]
+        vm.mapRegionss.push({"url": complete});
+      });
+      // console.log(vm.mapRegionss);
+
+    });
+  }
+})();
