@@ -12,68 +12,234 @@
   /** @ngInject */
   function MainController($timeout, webDevTec, toastr, $scope) {
     var vm = $scope;
+
+    vm.findProp = function(obj, key, out) {
+        var i,
+            proto = Object.prototype,
+            ts = proto.toString,
+            hasOwn = proto.hasOwnProperty.bind(obj);
+
+        if ('[object Array]' !== ts.call(out)) out = [];
+
+        for (i in obj) {
+            if (hasOwn(i)) {
+                if (i === key) {
+                    out.push(obj[i]);
+                } else if ('[object Array]' === ts.call(obj[i]) || '[object Object]' === ts.call(obj[i])) {
+                    vm.findProp(obj[i], key, out);
+                }
+            }
+        }
+
+        return out;
+    }
     vm.countyStat = userData;
+    vm.storeName = false;
+
     vm.outletList = storeData.stores
-
-
     vm.loadStats = function(county){
-      console.log(county)
+      $("#chart svg").remove();
+      var barChartData = []
 
-      //Width and height
-			var w = 200;
-			var h = 100;
-			var barPadding = 1;
+      barChartData = vm.findProp(vm.countyStat, county);
+      console.log(barChartData);
 
-			var dataset = [ 5, 10 ];
+      var w = 300;
+      var h = 50;
 
-			//Create SVG element
-			var svg = d3.select("#chart")
-						.append("svg")
-						.attr("width", w)
-						.attr("height", h);
+      var dataset = [
+      	{ key: "Nurse", value: jQuery.grep(barChartData[0], function (person) { return person.profession == "nurse" }).length },
+      	{ key: "Pharmacist", value: jQuery.grep(barChartData[0], function (person) { return person.profession == "pharmacist" }).length } ];
 
-			svg.selectAll("rect")
-			   .data(dataset)
-			   .enter()
-			   .append("rect")
-			   .attr("x", function(d, i) {
-			   		return i * (w / dataset.length);
-			   })
-			   .attr("y", function(d) {
-			   		return h - (d * 4);
-			   })
-			   .attr("width", w / dataset.length - barPadding)
-			   .attr("height", function(d) {
-			   		return d * 4;
-			   })
-			   .attr("fill", function(d) {
-					return "rgb(0, 0, " + (d * 10) + ")";
-			   });
+      var xScale = d3.scale.ordinal()
+      				.domain(d3.range(dataset.length))
+      				.rangeRoundBands([0, w], 0.05);
 
-			svg.selectAll("text")
-			   .data(dataset)
-			   .enter()
-			   .append("text")
-			   .text(function(d) {
-			   		return d;
-			   })
-			   .attr("x", function(d, i) {
-			   		return i * (w / dataset.length) + 5;
-			   })
-			   .attr("y", function(d) {
-			   		return h - (d * 4) + 15;
-			   })
-			   .attr("font-family", "sans-serif")
-			   .attr("font-size", "11px")
-			   .attr("fill", "white");
+      var yScale = d3.scale.linear()
+      				.domain([0, d3.max(dataset, function(d) {return d.value;})])
+      				.range([0, h]);
+
+      var key = function(d) {
+      	return d.key;
+      };
+
+      //Create SVG element
+      var svg = d3.select("#chart")
+      			.append("svg")
+      			.attr("width", w)
+      			.attr("height", h);
+
+      //Create bars
+      svg.selectAll("rect")
+         .data(dataset, key)
+         .enter()
+         .append("rect")
+         .attr("x", function(d, i) {
+      		return xScale(i);
+         })
+         .attr("y", function(d) {
+      		return h - yScale(d.value);
+         })
+         .attr("width", xScale.rangeBand())
+         .attr("height", function(d) {
+      		return yScale(d.value);
+         })
+         .attr("fill", function(d) {
+      		return "rgb(0, 0, " + (d.value * 10) + ")";
+         })
+
+      	//Tooltip
+      	.on("mouseover", function(d) {
+      		//Get this bar's x/y values, then augment for the tooltip
+      		var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand() / 2;
+      		var yPosition = parseFloat(d3.select(this).attr("y")) + 14;
+
+      		//Update Tooltip Position & value
+      		d3.select("#tooltip")
+      			.style("left", xPosition + "px")
+      			.style("top", yPosition + "px")
+      			.select("#value")
+      			.text(d.value);
+      		d3.select("#tooltip").classed("hidden", false)
+      	})
+      	.on("mouseout", function() {
+      		//Remove the tooltip
+      		d3.select("#tooltip").classed("hidden", true);
+      	})	;
+
+      //Create labels
+      svg.selectAll("text")
+         .data(dataset, key)
+         .enter()
+         .append("text")
+         .text(function(d) {
+      		return d.value;
+         })
+         .attr("text-anchor", "middle")
+         .attr("x", function(d, i) {
+      		return xScale(i) + xScale.rangeBand() / 2;
+         })
+         .attr("y", function(d) {
+      		return h - yScale(d.value) + 14;
+         })
+         .attr("font-family", "sans-serif")
+         .attr("font-size", "11px")
+         .attr("fill", "white");
+
+      var sortOrder = false;
+      var sortBars = function () {
+          sortOrder = !sortOrder;
+
+          sortItems = function (a, b) {
+              if (sortOrder) {
+                  return a.value - b.value;
+              }
+              return b.value - a.value;
+          };
+
+          svg.selectAll("rect")
+              .sort(sortItems)
+              .transition()
+              .delay(function (d, i) {
+              return i * 50;
+          })
+              .duration(1000)
+              .attr("x", function (d, i) {
+              return xScale(i);
+          });
+
+          svg.selectAll('text')
+              .sort(sortItems)
+              .transition()
+              .delay(function (d, i) {
+              return i * 50;
+          })
+              .duration(1000)
+              .text(function (d) {
+              return d.value;
+          })
+              .attr("text-anchor", "middle")
+              .attr("x", function (d, i) {
+              return xScale(i) + xScale.rangeBand() / 2;
+          })
+              .attr("y", function (d) {
+              return h - yScale(d.value) + 14;
+          });
+      };
+      // Add the onclick callback to the button
+      d3.select("#sort").on("click", sortBars);
+      d3.select("#reset").on("click", reset);
+      function randomSort() {
 
 
+      	svg.selectAll("rect")
+              .sort(sortItems)
+              .transition()
+              .delay(function (d, i) {
+              return i * 50;
+          })
+              .duration(1000)
+              .attr("x", function (d, i) {
+              return xScale(i);
+          });
 
+          svg.selectAll('text')
+              .sort(sortItems)
+              .transition()
+              .delay(function (d, i) {
+              return i * 50;
+          })
+              .duration(1000)
+              .text(function (d) {
+              return d.value;
+          })
+              .attr("text-anchor", "middle")
+              .attr("x", function (d, i) {
+              return xScale(i) + xScale.rangeBand() / 2;
+          })
+              .attr("y", function (d) {
+              return h - yScale(d.value) + 14;
+          });
+      }
+      function reset() {
+      	svg.selectAll("rect")
+      		.sort(function(a, b){
+      			return a.key - b.key;
+      		})
+      		.transition()
+              .delay(function (d, i) {
+              return i * 50;
+      		})
+              .duration(1000)
+              .attr("x", function (d, i) {
+              return xScale(i);
+      		});
 
+      	svg.selectAll('text')
+              .sort(function(a, b){
+      			return a.key - b.key;
+      		})
+              .transition()
+              .delay(function (d, i) {
+              return i * 50;
+          })
+              .duration(1000)
+              .text(function (d) {
+              return d.value;
+          })
+              .attr("text-anchor", "middle")
+              .attr("x", function (d, i) {
+              return xScale(i) + xScale.rangeBand() / 2;
+          })
+              .attr("y", function (d) {
+              return h - yScale(d.value) + 14;
+          });
+      };
 
     }
     vm.hitMap = function(d, i) {
       vm.regionName = "Region: " + i;
+      vm.loadStats(i);
       //Send click event on d3map for the county - to highlight
       $("[d='"+d+"']").d3Click();
     }

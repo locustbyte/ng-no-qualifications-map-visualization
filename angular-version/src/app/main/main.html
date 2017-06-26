@@ -1,3 +1,4 @@
+<div id="chart"></div>
 <div class="container">
   <div id="infoBox" style="opacity: 1;">
     <div class="btn-group" uib-dropdown keyboard-nav>
@@ -20,8 +21,7 @@
 
   <div id="chartInfo">
     <p ng-bind="regionName"></p>
-    <p ng-bind="storeName"></p>
-    <div id="chart"></div>
+    <p ng-bind="storeName" ng-show="storeName"></p>
   </div>
   <script type="text/javascript">
       var body = d3.select("body");

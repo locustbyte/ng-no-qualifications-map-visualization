@@ -47,13 +47,16 @@ svg{
   }
 }
 #chartInfo{
-  top: 30%;
+  top: 60px;
   position: absolute;
   left: 20px;
-  #chart{
-    width: 200px;
-    height: 100px;
-  }
+}
+#chart{
+  position: absolute;
+  width: 100%;
+  left: 10px;
+  bottom: 0;
+  height: 100px;
 }
 /**
  *  Do not remove the comments below. It's the markers used by gulp-inject to inject
